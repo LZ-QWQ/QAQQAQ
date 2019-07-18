@@ -263,3 +263,4 @@ __pycache__/
 #忽略数据集和模型文件 有点问题先这样吧
 /dataset
 /model_save
+/loss_acc_save

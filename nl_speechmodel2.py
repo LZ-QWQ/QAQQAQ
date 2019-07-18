@@ -164,6 +164,7 @@ class SpeechModel():
                 break
 
             hist.plot()
+            hist.save('lz_test2.json')
             if((epoch+1)%save_epoch==0):
                 self.SaveModel(filename)
         
@@ -206,22 +207,22 @@ class LossHistory(Callback):
         self.val_acc = {'batch':[], 'epoch':[]}
 
     def on_batch_end(self, batch, logs={}):
-        self.loss['batch'].append(logs.get('loss'))
-        self.acc['batch'].append(logs.get('acc'))
+        self.loss['batch'].append(float(logs.get('loss')))
+        self.acc['batch'].append(float(logs.get('acc')))
         #self.val_loss['batch'].append(logs.get('val_loss'))
         #self.val_acc['batch'].append(logs.get('val_acc'))
 
     def on_epoch_end(self, batch, logs={}):
-        self.loss['epoch'].append(logs.get('loss'))
-        self.acc['epoch'].append(logs.get('acc'))
+        self.loss['epoch'].append(float(logs.get('loss')))
+        self.acc['epoch'].append(float(logs.get('acc')))
         #self.val_loss['epoch'].append(logs.get('val_loss'))
         #self.val_acc['epoch'].append(logs.get('val_acc'))
 
-    def save(sefl,filename):
+    def save(self,filename):
         '''保存的文件名称'''
         path='loss_acc_save\\'
-        with open(path+filename,'a',encoding='UTF-8') as file_object:
-            json.dump([self.loss,self.acc,self.self.val_loss,self.val_acc])
+        with open(path+filename,mode='a') as file_object:
+            json.dump({'loss':self.loss,'acc':self.acc},file_object,indent=2)
 
     def plot(self,loss_type='batch'):#现在epoch都是1以后改进
         '''loss_type:batch,epoch'''
