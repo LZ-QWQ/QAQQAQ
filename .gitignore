@@ -264,3 +264,4 @@ __pycache__/
 /dataset
 /model_save
 /loss_acc_save
+/lan_model

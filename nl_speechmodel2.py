@@ -44,7 +44,7 @@ class SpeechModel():
     def CreateModel(self):
         
         input_data=Input(shape=(self.AUDIO_LENGTH,self.AUDIO_FEATURE_LENGTH,1),dtype='float32',name='input_data')
-        layer_1=Dropout(0.2)(input_data)
+        layer_1=Dropout(0.1)(input_data)
         #这个 1 是为了后面的conv2d
         layer_1=Conv2D(32,(3,3),use_bias=True,activation='relu',padding='same',
                        kernel_initializer='he_normal')(layer_1)
@@ -117,7 +117,7 @@ class SpeechModel():
         self.model_ctc.summary()
 
         #opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
-        opt=Adam(lr=0.0001,beta_1=0.9,beta_2=0.999,epsilon=None,decay=0.0,amsgrad=False)#Adam默认参数传说中的
+        opt=Adam(lr=0.00005,beta_1=0.9,beta_2=0.999,epsilon=None,decay=0.0,amsgrad=False)#Adam默认参数传说中的
         #opt=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5) 
         
         self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
@@ -143,16 +143,16 @@ class SpeechModel():
         speech_validation=DataSpeech(self.relpath,'test')#验证数据
         data_nums=speech_datas.DataNum_Total
         validation_nums=speech_validation.DataNum_Total
-        yield_datas=speech_datas.nl_speechmodel_generator(20,self.AUDIO_LENGTH,self.STRING_LENGTH)
+        yield_datas=speech_datas.nl_speechmodel_generator(24,self.AUDIO_LENGTH,self.STRING_LENGTH)
         yield_validation=speech_validation.nl_speechmodel_generator(8,self.AUDIO_LENGTH,self.STRING_LENGTH)
         
-        for epoch in range(0,epochs):
-            print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（总数据量//batch_size*batch_size=%d）)"
-                  %(epoch,epochs,data_nums//batch_size*batch_size))
+        for epoch in range(0,epochs):#这个地方感觉可以改进一下，要不换个办法？？
+            print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（500*batch_size=%d）)"
+                  %(epoch,epochs,500*batch_size))
             try:
                 hist=LossHistory()
                 self.model_ctc.fit_generator(generator=yield_datas,
-                                              steps_per_epoch=10,
+                                              steps_per_epoch=500,
                                               epochs=1,
                                               verbose=1,
                                               #validation_data=yield_validation,
@@ -220,14 +220,17 @@ class LossHistory(Callback):
 
     def save(self,filename):
         '''保存的文件名称'''
+        #这个地方还是要换行保存才行！
         path='loss_acc_save\\'
         with open(path+filename,mode='a') as file_object:
-            json.dump({'loss':self.loss,'acc':self.acc},file_object,indent=2)
+            #json.dump({'loss':self.loss,'acc':self.acc},file_object,indent=2)
+            temp=json.dumps({'loss':self.loss,'acc':self.acc})
+            file_object.write(temp+'\n')
 
     def plot(self,loss_type='batch'):#现在epoch都是1以后改进
         '''loss_type:batch,epoch'''
         iters = range(len(self.loss[loss_type]))
-        plt.figure()
+        fig=plt.figure()
         # acc
         plt.plot(iters, self.acc[loss_type], 'r', label='train acc')
         # loss
@@ -241,10 +244,11 @@ class LossHistory(Callback):
         plt.xlabel(loss_type)
         plt.ylabel('acc-loss')
         plt.legend(loc="upper right")
-        plt.show()
+        plt.pause(5)
+        plt.close(fig)
 
 if(__name__ == '__main__'):
     S_M=SpeechModel('dataset')
-    #S_M.LoadModel('lz_test2')
-    S_M.TrainModel('lz_test2',epochs=10)
-    #S_M.PredModel('lz_test1')
+    S_M.LoadModel('lz_test2')
+    S_M.TrainModel('lz_test2',epochs=200)
+    #S_M.PredModel('lz_test2')

@@ -101,9 +101,9 @@ def nl_feature_show(feat):
 
 if(__name__=='__main__'):
     #wave_data,framerate,wavtime=read_wav_data('天使.wav')    
-    wave_data,framerate,wavtime=read_wav_data('G:\\Code\\国创\\dataset\\data_thchs30\\data\\A2_0.wav')
+    wave_data,framerate,wavtime=read_wav_data('G:\\Code\\QAQQAQ\\dataset\\data_thchs30\\data\\A2_0.wav')
     feat_nl=Get_nlfeat(wave_data,framerate)
-    #nl_feature_show(feat_nl)
+    nl_feature_show(feat_nl)
     #wave_show(wave_data,wavtime)
     #print(GetFrequencyFeature3(wave_data,framerate))
     #feat_mfcc=GetMFCC(wave_data[0],framerate)
