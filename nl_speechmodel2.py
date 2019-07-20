@@ -122,6 +122,7 @@ class SpeechModel():
         
         self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
                                optimizer=opt,metrics = ['accuracy'])
+        #这个accuracy好像没用啊.....这个输出是ctc,,,,,,
         # captures output of softmax so we can decode the output during visualization
         #这个留着以后改进回调函数用
         test_func = K.function([input_data], [y_pred])
