@@ -1,6 +1,7 @@
 import json
 
 #这里在保存文件的时候放了个巨大的错误1016
+#后修复
 if(__name__=='__main__'):
     with open('lz_test2.json','r',encoding='UTF-8') as file_object:
         #open('lz_temp.json',mode='w',encoding='UTF-8') as file_object2:

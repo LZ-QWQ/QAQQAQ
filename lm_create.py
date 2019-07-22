@@ -73,21 +73,62 @@ def del_punc(corpus_line):
     return corpus_line
 
 if(__name__=='__main__'):
-    corpus=read_file('dataset\\new2016zh\\news2016zh_train.json')
+    #corpus=read_file('dataset\\new2016zh\\news2016zh_train.json')
 
+    #path='lan_model\\'
+    #filename='lz_lm_1'
+    #unig={}
+    #big={}
+    #trig={}
+
+
+    #for line in corpus:
+    #    print(line)
+    #    temp=digits2ch(line)
+        
+    #    #temp=del_punc(temp)好像不能删
+    #    temp_l=jieba.lcut(temp,cut_all=False,HMM=True)
+    #    count_word_uni(temp_l,unig)
+    #with open(path+filename+'_1.json','w+',encoding='UTF-8') as file_object:
+    #    json.dump(unig,file_object,indent=4,sort_keys=True,ensure_ascii=False)
+
+
+    #这个是处理thchs30里的lm文件,,,,就拿来用下啦,,,自己做太麻烦了吧！！！！
     path='lan_model\\'
-    filename='lz_lm_1'
+    filename='word.3gram.lm'
     unig={}
     big={}
     trig={}
+    with open(path+filename,'r',encoding='UTF-8') as file_object:
+        lines=file_object.readlines()
+        len_wordlm=len(lines)
+        all_1=int(lines[2][8:-1])
+        all_2=int(lines[3][8:-1])
+        all_3=int(lines[4][8:-1])
+        unig['unigram']=all_1
+        big['bigram']=all_2
+        trig['trigram']=all_3
+        for i in range(7,7+all_1):
+            temp=lines[i].split('\t')
+            if len(temp)==2:
+                unig[temp[1][0:-1]]=[float(temp[0]),0]
+            else: unig[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
+    
+        for i in range(7+all_1+2,7+all_1+2+all_2):
+            temp=lines[i].split('\t')
+            if len(temp)==2:
+                big[temp[1][0:-1]]=[float(temp[0]),0]
+            else: big[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
+    
+        for i in range(7+all_1+2+all_2+2,7+all_1+2+all_2+2+all_3):
+            temp=lines[i].split('\t')
+            if len(temp)==2:
+                trig[temp[1][0:-1]]=[float(temp[0]),0]
+            else: trig[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
 
-
-    for line in corpus:
-        print(line)
-        temp=digits2ch(line)
-        
-        #temp=del_punc(temp)好像不能删
-        temp_l=jieba.lcut(temp,cut_all=False,HMM=True)
-        count_word_uni(temp_l,unig)
-    with open(path+filename+'_1.json','w+',encoding='UTF-8') as file_object:
-        json.dump(unig,file_object,indent=4,sort_keys=True,ensure_ascii=False)
+        with open(path+'unigram.json','w+',encoding='UTF-8') as file_object:
+            json.dump(unig,file_object,indent=1,sort_keys=True,ensure_ascii=False)
+        with open(path+'bigram.json','w+',encoding='UTF-8') as file_object:
+            json.dump(big,file_object,indent=1,sort_keys=True,ensure_ascii=False)        
+        with open(path+'trigram.json','w+',encoding='UTF-8') as file_object:
+            json.dump(trig,file_object,indent=1,sort_keys=True,ensure_ascii=False)

@@ -4,6 +4,8 @@ from keras.layers import Lambda,Conv2D,Input,Dropout,MaxPooling2D,Reshape,Dense,
 from keras.models import Model,load_model
 from keras.optimizers import Adam,Adadelta,SGD
 from keras.callbacks import Callback
+from keras.utils import multi_gpu_model
+import tensorflow as tf
 
 import platform as plat
 import os
@@ -112,17 +114,25 @@ class SpeechModel():
         loss_out=Lambda(self.ctc_loss_func,output_shape=(1,),
                     name='ctc')([y_pred,label,input_length,label_length])
 
-        self.model_ctc=Model([input_data,label,input_length,label_length],loss_out)
+        with tf.device('/cpu:0'):#好像这里没有用啊？是默认cpu建立了吗
+            self.model_ctc=Model([input_data,label,input_length,label_length],loss_out)
 
         self.model_ctc.summary()
 
+        #self.parallel_model_ctc = multi_gpu_model(self.model_ctc,gpus=2, cpu_relocation=True)
+        #cpu_relocation=True的话会报错，，为什么。。。查了下没查到
+        self.parallel_model_ctc=multi_gpu_model(self.model_ctc,gpus=2)
+        
         #opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
         opt=Adam(lr=0.00005,beta_1=0.9,beta_2=0.999,epsilon=None,decay=0.0,amsgrad=False)#Adam默认参数传说中的
         #opt=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5) 
         
-        self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
+        #self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
+        #                       optimizer=opt,metrics = ['accuracy'])
+        self.parallel_model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
                                optimizer=opt,metrics = ['accuracy'])
         #这个accuracy好像没用啊.....这个输出是ctc,,,,,,
+
         # captures output of softmax so we can decode the output during visualization
         #这个留着以后改进回调函数用
         test_func = K.function([input_data], [y_pred])
@@ -144,7 +154,7 @@ class SpeechModel():
         speech_validation=DataSpeech(self.relpath,'test')#验证数据
         data_nums=speech_datas.DataNum_Total
         validation_nums=speech_validation.DataNum_Total
-        yield_datas=speech_datas.nl_speechmodel_generator(24,self.AUDIO_LENGTH,self.STRING_LENGTH)
+        yield_datas=speech_datas.nl_speechmodel_generator(32,self.AUDIO_LENGTH,self.STRING_LENGTH)
         yield_validation=speech_validation.nl_speechmodel_generator(8,self.AUDIO_LENGTH,self.STRING_LENGTH)
         
         for epoch in range(0,epochs):#这个地方感觉可以改进一下，要不换个办法？？
@@ -152,7 +162,7 @@ class SpeechModel():
                   %(epoch,epochs,500*batch_size))
             try:
                 hist=LossHistory()
-                self.model_ctc.fit_generator(generator=yield_datas,
+                self.parallel_model_ctc.fit_generator(generator=yield_datas,
                                               steps_per_epoch=500,
                                               epochs=1,
                                               verbose=1,
@@ -183,9 +193,10 @@ class SpeechModel():
         self.model_data.load_weights(self.save_path+filename+'_weights_data.h5')
 
     def PredModel(self,filename):
-        self.model_data.load_weights(filename+'_weights_data.h5')
+        path='model_save\\'
+        self.model_data.load_weights(path+filename+'_weights_data.h5')
         speech_datas=DataSpeech(self.relpath,'train')
-        data_input,data_output=speech_datas.GetData(100)
+        data_input,data_output=speech_datas.GetData(2)
         X=np.zeros((1,1600,200,1),dtype=np.float64)
         X[0,0:len(data_input)]=data_input;
         y_pre=self.model_data.predict(X)
@@ -197,7 +208,11 @@ class SpeechModel():
         n=K.eval(r1)
         m=K.get_value(r[1])
         print(n)#get_value好像是把张量变数组
+        #print(n.shape)
+        #print(type(n))
         print(m)
+        pinyin=speech_datas.num2symbol(n)
+        print(pinyin)
 
 class LossHistory(Callback):
     def __init__(self):

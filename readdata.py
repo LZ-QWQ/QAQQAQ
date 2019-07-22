@@ -190,7 +190,7 @@ class DataSpeech():
         symbollist_name = 'dict.txt'
         list_symbol = []
         #list_symbol.append(' ')#0把是
-        with open(symbollist_name,'r',encoding='UTF-8-sig') as file_object:#这里涉及一个编码什么BOM的问题所以用 UTF-8-sig
+        with open(symbollist_name,'r',encoding='UTF-8') as file_object:
             file_text = file_object.read()
             file_lines = file_text.split('\n')
             for line in file_lines: 
@@ -207,11 +207,19 @@ class DataSpeech():
             return self.list_symbol.index(symbol)
         return #不知道咋办，博士是放拼音总数，，，
 
+    def num2symbol(self,vector):
+        symbols=[]
+        for i in vector[0]:
+            #print(type(i))
+            #print(i.shape)
+            symbols.append(self.list_symbol[int(i)])
+        return symbols
+
 if(__name__ == '__main__'):
     data = DataSpeech('dataset','train')
     #print(data.symbol2num('xian1'))
-    #print(data.list_symbol)
-    #print(len(data.list_symbol))
+    print(data.list_symbol)
+    print(len(data.list_symbol))
     #data.nl_speechmodel_generator()
     #print(data.datapath)
     #print(data.dic_wavlist_thchs30)

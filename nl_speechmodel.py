@@ -4,6 +4,8 @@ import keras.backend as K
 from keras.layers import Lambda,Conv2D,Input,Dropout,MaxPooling2D,Reshape,Dense,Activation
 from keras.models import Model,load_model
 from keras.optimizers import Adam,Adadelta,SGD
+from keras.utils import multi_gpu_model
+import tensorflow as tf
 import platform as plat
 import os
 
@@ -106,16 +108,20 @@ class SpeechModel():
         # so CTC loss is implemented in a lambda layer
         loss_out=Lambda(self.ctc_loss_func,output_shape=(1,),
                     name='ctc')([y_pred,label,input_length,label_length])
-
-        self.model_ctc=Model([input_data,label,input_length,label_length],loss_out)
-
+        with tf.device('/cpu:0'):
+            self.model_ctc=Model([input_data,label,input_length,label_length],loss_out)
+        #self.parallel_model_ctc = multi_gpu_model(self.model_ctc,gpus=2, cpu_relocation=True)
+        #cpu_relocation=True的话会报错，，
+        self.parallel_model_ctc=multi_gpu_model(self.model_ctc,gpus=2)
+        
         self.model_ctc.summary()
 
         #opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
         opt=Adam(lr=0.00005,beta_1=0.9,beta_2=0.999,epsilon=None,decay=0.0,amsgrad=False)#Adam默认参数传说中的
         #opt=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5) 
         
-        self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},optimizer=opt)
+        #self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},optimizer=opt)
+        self.parallel_model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},optimizer=opt)
         # captures output of softmax so we can decode the output during visualization
         test_func = K.function([input_data], [y_pred])
 
@@ -136,14 +142,14 @@ class SpeechModel():
         speech_validation=DataSpeech(self.relpath,'test')#验证数据
         data_nums=speech_datas.DataNum_Total
         validation_nums=speech_validation.DataNum_Total
-        yield_datas=speech_datas.nl_speechmodel_generator(20,self.AUDIO_LENGTH,self.STRING_LENGTH)
+        yield_datas=speech_datas.nl_speechmodel_generator(32,self.AUDIO_LENGTH,self.STRING_LENGTH)
         yield_validation=speech_validation.nl_speechmodel_generator(8,self.AUDIO_LENGTH,self.STRING_LENGTH)
         
         for epoch in range(0,epochs):
             print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（总数据量//batch_size*batch_size=%d）)"
                   %(epoch,epochs,data_nums//batch_size*batch_size))
             try:
-                hist=self.model_ctc.fit_generator(generator=yield_datas,
+                hist=self.parallel_model_ctc.fit_generator(generator=yield_datas,
                                               steps_per_epoch=500,
                                               epochs=1,
                                               verbose=1,
