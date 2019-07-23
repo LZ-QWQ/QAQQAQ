@@ -96,39 +96,36 @@ if(__name__=='__main__'):
     #这个是处理thchs30里的lm文件,,,,就拿来用下啦,,,自己做太麻烦了吧！！！！
     path='lan_model\\'
     filename='word.3gram.lm'
-    unig={}
-    big={}
-    trig={}
+#有点问题还要修复
     with open(path+filename,'r',encoding='UTF-8') as file_object:
         lines=file_object.readlines()
         len_wordlm=len(lines)
         all_1=int(lines[2][8:-1])
         all_2=int(lines[3][8:-1])
         all_3=int(lines[4][8:-1])
-        unig['unigram']=all_1
-        big['bigram']=all_2
-        trig['trigram']=all_3
-        for i in range(7,7+all_1):
-            temp=lines[i].split('\t')
-            if len(temp)==2:
-                unig[temp[1][0:-1]]=[float(temp[0]),0]
-            else: unig[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
-    
-        for i in range(7+all_1+2,7+all_1+2+all_2):
-            temp=lines[i].split('\t')
-            if len(temp)==2:
-                big[temp[1][0:-1]]=[float(temp[0]),0]
-            else: big[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
-    
-        for i in range(7+all_1+2+all_2+2,7+all_1+2+all_2+2+all_3):
-            temp=lines[i].split('\t')
-            if len(temp)==2:
-                trig[temp[1][0:-1]]=[float(temp[0]),0]
-            else: trig[temp[1]]=[float(temp[0]),float(temp[2][0:-1])]
+        with open(path+'unigram.txt','w',encoding='UTF-8') as file_object:
+            file_object.write('unigram '+str(all_1)+'\n')
+            for i in range(7,7+all_1):
+                temp=lines[i].split('\t')
+                if len(temp)==2:
+                    out_str=temp[1][0:-1]+' '+temp[0]+' 0\n'
+                else: out_str=temp[1]+' '+temp[0]+' '+temp[2][0:-1]+'\n'
+                file_object.write(out_str)
 
-        with open(path+'unigram.json','w+',encoding='UTF-8') as file_object:
-            json.dump(unig,file_object,indent=1,sort_keys=True,ensure_ascii=False)
-        with open(path+'bigram.json','w+',encoding='UTF-8') as file_object:
-            json.dump(big,file_object,indent=1,sort_keys=True,ensure_ascii=False)        
-        with open(path+'trigram.json','w+',encoding='UTF-8') as file_object:
-            json.dump(trig,file_object,indent=1,sort_keys=True,ensure_ascii=False)
+        with open(path+'bigram.txt','w',encoding='UTF-8') as file_object:
+            file_object.write('bigram '+str(all_2)+'\n')
+            for i in range(7+all_1+2,7+all_1+2+all_2):
+                temp=lines[i].split('\t')
+                if len(temp)==2:
+                    out_str=temp[1][0:-1]+' '+temp[0]+' 0\n'
+                else: out_str=temp[1]+' '+temp[0]+' '+temp[2][0:-1]+'\n'
+                file_object.write(out_str)
+
+        with open(path+'trigram.txt','w',encoding='UTF-8') as file_object:    
+            file_object.write('trigram '+str(all_3)+'\n')
+            for i in range(7+all_1+2+all_2+2,7+all_1+2+all_2+2+all_3):
+                temp=lines[i].split('\t')
+                if len(temp)==2:
+                    out_str=temp[1][0:-1]+' '+temp[0]+' 0\n'
+                else: out_str=temp[1]+' '+temp[0]+' '+temp[2][0:-1]+'\n'
+                file_object.write(out_str)

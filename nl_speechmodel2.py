@@ -16,7 +16,7 @@ from readdata import DataSpeech
 import numpy as np
 
 class SpeechModel():
-    def __init__(self, relpath):#relpath 数据集绝对路径
+    def __init__(self, relpath):#relpath 数据集相对路径
         self.OUTPUT_SIZE=1424;#很尴尬，，最后一个空白
         self.STRING_LENGTH=64;
         self.AUDIO_LENGTH=1600;
