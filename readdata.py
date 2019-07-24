@@ -6,7 +6,7 @@ import random
 
 from Threadsafe_iter import threadsafe_generator
 
-
+#数据读取以后有机会改成列表管理，要不迟早玩死自己
 class DataSpeech():
     def __init__(self,relpath, type):
         system_type = plat.system()
@@ -50,41 +50,60 @@ class DataSpeech():
         if(self.type == 'train'):
             filename_wavlist_thchs30 = 'thchs30' + self.slash + 'train.wav.lst'
             filename_wavlist_stcmds = 'st-cmds' + self.slash + 'train.wav.txt'
+            filename_wavlist_aishell='aishell'+self.slash+'wav_train.txt'
             filename_symbollist_thchs30 = 'thchs30' + self.slash + 'train.syllable.txt'
-            filename_symbollist_stcmds = 'st-cmds' + self.slash + 'train.syllable.txt'
+            filename_symbollist_stcmds = 'st-cmds' + self.slash + 'train.syllable.txt'           
+            filename_symbollist_aishell='aishell'+self.slash+'symbol_train.txt'
         elif(self.type == 'dev'):
             filename_wavlist_thchs30 = 'thchs30' + self.slash + 'cv.wav.lst'
             filename_wavlist_stcmds = 'st-cmds' + self.slash + 'dev.wav.txt'
+            filename_wavlist_aishell='aishell'+self.slash+'wav_dev.txt'
             filename_symbollist_thchs30 = 'thchs30' + self.slash + 'cv.syllable.txt'
             filename_symbollist_stcmds = 'st-cmds' + self.slash + 'dev.syllable.txt'
+            filename_symbollist_aishell='aishell'+self.slash+'symbol_dev.txt'
         elif(self.type == 'test'):
             filename_wavlist_thchs30 = 'thchs30' + self.slash + 'test.wav.lst'
             filename_wavlist_stcmds = 'st-cmds' + self.slash + 'test.wav.txt'
+            filename_wavlist_aishell='aishell'+self.slash+'wav_test.txt'
             filename_symbollist_thchs30 = 'thchs30' + self.slash + 'test.syllable.txt'
             filename_symbollist_stcmds = 'st-cmds' + self.slash + 'test.syllable.txt'
+            filename_symbollist_aishell='aishell'+self.slash+'symbol_test.txt'
         else:
             filename_wavlist = '' # 默认留空
             filename_symbollist = ''
         # 读取数据列表，wav文件列表和其对应的符号列表
         self.dic_wavlist_thchs30,self.list_wavname_thchs30 = self.get_wav_list(self.datapath + filename_wavlist_thchs30)
         self.dic_wavlist_stcmds,self.list_wavname_stcmds = self.get_wav_list(self.datapath + filename_wavlist_stcmds)
+        self.dic_wavlist_aishell,self.list_wavname_aishell = self.get_wav_list(self.datapath + filename_wavlist_aishell)
         
         self.dic_symbollist_thchs30,self.list_symbolname_thchs30 = self.get_symbol_list(self.datapath + filename_symbollist_thchs30)
         self.dic_symbollist_stcmds,self.list_symbolname_stcmds = self.get_symbol_list(self.datapath + filename_symbollist_stcmds)
+        self.dic_symbollist_aishell,self.list_symbolname_stcmds = self.get_symbol_list(self.datapath + filename_symbollist_aishell)
+        
         self.DataNum_Total = self.GetDataNum()
 
     def GetData(self,wav_num):
         '''
         读取一个数据，返回输入矩阵输出label
         '''
+        if wav_num>self.DataNum_Total:
+            print('并没有那么多数据~')
+            return -1 #先写着-1吧
+
         if(wav_num<self.DataNum_thchs30):
             wavname = self.list_wavname_thchs30[wav_num]
             wav_filename=self.dic_wavlist_thchs30[wavname]
             symbol=self.dic_symbollist_thchs30[wavname]
-        else:
+
+        elif wav_num<self.DataNum_thchs30+self.DataNum_stcmds:
             wavname=self.list_wavname_stcmds[wav_num-self.DataNum_thchs30]
             wav_filename=self.dic_wavlist_stcmds[wavname]
             symbol=self.dic_symbollist_stcmds[wavname]
+
+        else:
+            wavname=self.list_wavname_aishell[wav_num-self.DataNum_thchs30-self.DataNum_stcmds]
+            wav_filename=self.dic_wavlist_aishell[wavname]
+            symbol=self.dic_symbollist_aishell[wavname]
 
         wav_filename=self.datapath+wav_filename
         wave_data,framerate,wavetime=wav.read_wav_data(wav_filename)
@@ -172,12 +191,16 @@ class DataSpeech():
         num_s_thchs30 = len(self.dic_symbollist_thchs30)
         num_w_stcmds = len(self.dic_wavlist_stcmds)
         num_s_stcmds = len(self.dic_symbollist_stcmds)
+        num_w_aishell = len(self.dic_wavlist_aishell)
+        num_s_aishell = len(self.dic_symbollist_aishell)
 
-        if((num_w_thchs30 == num_s_thchs30) & (num_w_stcmds == num_s_stcmds)):
-            self.DataNum_Total = num_w_thchs30 + num_w_stcmds
+        if(num_w_thchs30 == num_s_thchs30 and num_w_stcmds == num_s_stcmds and num_w_aishell==num_s_aishell):
+            self.DataNum_Total = num_w_thchs30 + num_w_stcmds +num_w_aishell
             self.DataNum_stcmds = num_w_stcmds 
             self.DataNum_thchs30=num_w_thchs30
+            self.DataNum_aishell=num_w_aishell
         else:
+            print(数据和标签数量有误)
             return -1
 
         return 1
@@ -205,6 +228,7 @@ class DataSpeech():
     def symbol2num(self,symbol):
         if(symbol != ''):
             return self.list_symbol.index(symbol)
+        print('symbol有空白哦，就是没有的那种空白\'\'这样？')
         return #不知道咋办，博士是放拼音总数，，，
 
     def num2symbol(self,vector):
@@ -218,14 +242,14 @@ class DataSpeech():
 if(__name__ == '__main__'):
     data = DataSpeech('dataset','train')
     #print(data.symbol2num('xian1'))
-    print(data.list_symbol)
-    print(len(data.list_symbol))
+    #print(data.list_symbol)
+    #print(len(data.list_symbol))
     #data.nl_speechmodel_generator()
     #print(data.datapath)
     #print(data.dic_wavlist_thchs30)
     #print(data.list_wavnum_thchs30)
     #print(data.dic_symbollist_stcmds)
-    #print(data.DataNum_Total)
-    #print(data.GetData(1))
+    print(data.DataNum_Total)
+    print(data.GetData(230000))
     #generator_test=data.nl_speechmodel_generator()
     #len(generator_test)#明明没有

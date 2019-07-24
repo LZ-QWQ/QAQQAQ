@@ -96,7 +96,6 @@ if(__name__=='__main__'):
     #这个是处理thchs30里的lm文件,,,,就拿来用下啦,,,自己做太麻烦了吧！！！！
     path='lan_model\\'
     filename='word.3gram.lm'
-#有点问题还要修复
     with open(path+filename,'r',encoding='UTF-8') as file_object:
         lines=file_object.readlines()
         len_wordlm=len(lines)

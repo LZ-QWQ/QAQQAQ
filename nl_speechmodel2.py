@@ -151,11 +151,11 @@ class SpeechModel():
         filename:保存的文件名，路径、后缀已准备好，如model_lz
         '''
         speech_datas=DataSpeech(self.relpath,'train')
-        speech_validation=DataSpeech(self.relpath,'test')#验证数据
+        #speech_validation=DataSpeech(self.relpath,'test')#验证数据
         data_nums=speech_datas.DataNum_Total
-        validation_nums=speech_validation.DataNum_Total
+        #validation_nums=speech_validation.DataNum_Total
         yield_datas=speech_datas.nl_speechmodel_generator(32,self.AUDIO_LENGTH,self.STRING_LENGTH)
-        yield_validation=speech_validation.nl_speechmodel_generator(8,self.AUDIO_LENGTH,self.STRING_LENGTH)
+        #yield_validation=speech_validation.nl_speechmodel_generator(8,self.AUDIO_LENGTH,self.STRING_LENGTH)
         
         for epoch in range(0,epochs):#这个地方感觉可以改进一下，要不换个办法？？
             print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（500*batch_size=%d）)"

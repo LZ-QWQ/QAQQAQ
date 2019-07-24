@@ -10,12 +10,30 @@ class Language_Model():
 
     def load_languagemodel(self):
 
-        with open(self.path+'unigram.json','r',encoding='UTF-8') as file_object:
-            self.unig=json.load(file_object)
-        with open(self.path+'bigram.json','r',encoding='UTF-8') as file_object:
-            self.big=json.load(file_object)
-        with open(self.path+'trigram.json','r',encoding='UTF-8') as file_object:
-            self.trig=json.load(file_object)
+        with open(self.path+'unigram.txt','r',encoding='UTF-8') as file_object:
+            unig_list=file_object.readlines()
+            len_ulist=len(unig_list)
+            self.unig={}
+            for i in range(1,len_ulist-1):
+                temp=unig_list[i].split('')
+                self.unig[temp[0]]=[float(temp[1]),float(temp[2][:-1])]#这里有个换行符
+
+        with open(self.path+'bigram.txt','r',encoding='UTF-8') as file_object:
+            big_list=file_object.readlines()
+            len_blist=len(unig_list)
+            self.big={}
+            for i in range(1,len_blist-1):
+                temp=big_list[i].split('')
+                self.big[temp[0]]=[float(temp[1]),float(temp[2][:-1])]#这里有个换行符
+
+        with open(self.path+'trigram.txt','r',encoding='UTF-8') as file_object:
+            trig_list=file_object.readlines()
+            len_tlist=len(trig_list)
+            self.unig={}
+            for i in range(1,len_ulist-1):
+                temp=unig_list[i].split('')
+                self.unig[temp[0]]=[float(temp[1]),float(temp[2][:-1])]#这里有个换行符
+
         with open(self.path+'dict.txt','r',encoding='UTF-8') as file_object:#这个真是魔鬼啊
             temp=file_object.read()
             lines=temp.split('\n')
