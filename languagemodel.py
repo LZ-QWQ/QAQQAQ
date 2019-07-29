@@ -2,6 +2,9 @@ import json
 
 '''
 魔鬼语言模型~
+三元条件概率  Katz退避  SRILM训练（thchs30）
+词网格 Viterbi解码 
+再叠加了个beam search的感觉。（这个感觉好像作用不大）
 代码逻辑爆炸混乱
 '''
 class Language_Model():
@@ -9,6 +12,7 @@ class Language_Model():
         '''
         文件路径+\\(windows下)，文件名写好了哦
         '''
+        self.beam=3#维特比解码每个词时保存路径数
         self.start='<s>'
         self.end='</s>'
         self.path=path
@@ -89,17 +93,24 @@ class Language_Model():
                     raise ValueError('词的长度有问题哇QAQ')
         
         Pros_end=[]
-        for p_end in self.Pros[len_pinyin-1]:#加上结尾符号，，
-            word_list_temp=[p_end.path[-1],p_end.path[-2],self.end]
-            temp_pro=p_end.pro+self.pro(word_list_temp)
-            Pros_end.append(Words_pro_path(temp_pro,p_end.path))
+        for p_ends in self.Pros[len_pinyin-1]:#加上结尾符号，，
+            if type(p_ends)==list:
+                for p_end in p_ends :#因为保存了多个（三个）
+                    word_list_temp=[p_end.path[-1],p_end.path[-2],self.end]
+                    temp_pro=p_end.pro+self.pro(word_list_temp)
+                    Pros_end.append(Words_pro_path(temp_pro,p_end.path))
+            else:
+                 word_list_temp=[p_ends.path[-1],p_ends.path[-2],self.end]
+                 temp_pro=p_ends.pro+self.pro(word_list_temp)
+                 Pros_end.append(Words_pro_path(temp_pro,p_ends.path))
 
-        Pros_end.sort(key=lambda P:P.pro,reverse=True)
+        Pros_end.sort(key=lambda P:P.pro,reverse=True)#这里也有变成三倍之多
         print(' '.join(Pros_end[0].path)+'\t'+str(Pros_end[0].pro))
 
     def deal_pro_three(self,word3,p3):
         '''
         专门用来计算解码时的三元条件概率和（完整）的计算
+        感觉是核心哦~
         '''
         p2=p3-len(word3)
         temp_words=[]
@@ -110,14 +121,21 @@ class Language_Model():
                 temp_words.append(Words_pro_path(temp_pro,[word2,word3]))
             elif p1>-1:
                 for word1 in self.Words[p1]:
-                    index=self.Words[p1].index(word1)
-                    word0=self.Pros[p1][index].path[-1]
-                    temp_pro=self.pro([word1,word2,word3])+self.pro([word0,word1,word2])+self.Pros[p1][index].pro#合并前面概率
-                    temp_words.append(Words_pro_path(temp_pro,self.Pros[p1][index].path+[word2,word3]))#合并前面路径
+                    index=self.Words[p1].index(word1)#因为是按顺序插入的所以可以直接获取索引，Words和Prods是一一对应的                    
+                    temp_pro_path=self.Pros[p1][index]
+                    if type(temp_pro_path)==list:#因为某些情况并没有保存多个路径,并不是列表
+                        for i in range(0,len(temp_pro_path)):#因为这里保存了多个路径及概率，数量可能没有self.beam这么多
+                            word0=self.Pros[p1][index][i].path[-1]
+                            temp_pro=self.pro([word1,word2,word3])+self.pro([word0,word1,word2])+self.Pros[p1][index][i].pro#合并前面概率
+                            temp_words.append(Words_pro_path(temp_pro,self.Pros[p1][index][i].path+[word2,word3]))#合并前面路径
+                    else:
+                            word0=self.Pros[p1][index].path[-1]
+                            temp_pro=self.pro([word1,word2,word3])+self.pro([word0,word1,word2])+self.Pros[p1][index].pro#合并前面概率
+                            temp_words.append(Words_pro_path(temp_pro,self.Pros[p1][index].path+[word2,word3]))#合并前面路径
             else:
                 raise ValueError('词的长度有问题哇QAQ')
         temp_words.sort(key=lambda w:w.pro,reverse=True)
-        self.Pros[p3].append(temp_words[0])
+        self.Pros[p3].append(temp_words[0:self.beam])#保存多个有点类似beam search
 
     def get_word(self,list_pinyin_word):
         '''
@@ -189,3 +207,5 @@ if __name__=='__main__':
     LM.decode(['kao3', 'yan2', 'yan1', 'yu3', 'ci2', 'hui4'])
     LM.decode(['xi3','huan1','ni3','o2'])
     LM.decode(['chao1','xi3','huan1','ni3','o4'])
+    LM.decode(['xian4','dai4','han4','yu3','ci2','dian3','zhen1','de5','hen3','hao3','yong4'])
+    LM.decode(['ai3','nai3','yi1','sheng1','shan1','shui3','lv4'])
