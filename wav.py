@@ -44,13 +44,12 @@ def wave_show(wave_data,wavtime):
     plt.show()
 
 #博士的特征提取
-x=np.linspace(0, 400 - 1, 400, dtype = np.int64)
-w = 0.54 - 0.46 * np.cos(2 * np.pi * (x) / (400 - 1) ) # 汉明窗
-
-def Get_nlfeat(wavsignal, fs):
+def Get_nlfeat(wavsignal, fs):#就是所谓的语谱图（语音频谱图）
     '''
     主要是用来修正3版的bug
     '''
+    x=np.linspace(0, 400 - 1, 400, dtype = np.int64)
+    w = 0.54 - 0.46 * np.cos(2 * np.pi * (x) / (400 - 1) ) # 汉明窗
     if(16000 != fs):
         raise ValueError('[Error] ASRT currently only supports wav audio files with a sampling rate of 16000 Hz, but this audio is ' + str(fs) + ' Hz. ')
     
@@ -79,7 +78,6 @@ def Get_nlfeat(wavsignal, fs):
 
         data_input[i]=data_line[0: int(window_length // 2)] # 设置为400除以2的值（即200）是取一半数据，因为是对称的
         
-    #print(data_input.shape)
     data_input = np.log(data_input + 1)
     data_input=np.array(data_input)
     return data_input

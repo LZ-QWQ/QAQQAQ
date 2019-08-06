@@ -6,6 +6,7 @@ import json
 词网格 Viterbi解码 
 再叠加了个beam search的感觉。（这个感觉好像作用不大）
 代码逻辑爆炸混乱
+字典 有点问题 不好处理  pypinyin转出来的单字多音，，
 '''
 class Language_Model():
     def __init__(self,path):
@@ -47,7 +48,8 @@ class Language_Model():
                 self.trig[' '.join(temp[0:3])]=[float(temp[3]),float(temp[4][:-1])]#这里有个换行符
 
         #pypinyin转换的声调有问题，，，（或者说很奇怪），，，correct是用thchs30原文件修正的
-        with open(self.path+'lz_lexicon_correct.txt','r',encoding='UTF-8') as file_object:#这个真是魔鬼啊
+        #thchs30带变调，pypinyin，理论上不带比较合适
+        with open(self.path+'lz_lexicon.txt','r',encoding='UTF-8') as file_object:#这个真是魔鬼啊
             temp_all=file_object.read()
             temp_list=temp_all.split('\n')#最后一个是''
             self.lexicon={}
@@ -203,9 +205,12 @@ if __name__=='__main__':
                'se4','si4','yue4','de5','lin2','luan2','geng4','shi4','lv4','de5','xian1','huo2','xiu4','mei4','shi1',
               'yi4','ang4','ran2'])
     LM.decode(['jin1','tian1','tian1','qi4','zhen1','hao3'])
-    LM.decode(['xi1','an1','dian4','zi3','ke1','ji4','da4','xue2'])#pypinyin把很多 子 都翻成 zi5
+    LM.decode(['xi1','an1','dian4','zi5','ke1','ji4','da4','xue2'])#pypinyin把很多 子 都翻成 zi5
     LM.decode(['kao3', 'yan2', 'yan1', 'yu3', 'ci2', 'hui4'])
     LM.decode(['xi3','huan1','ni3','o2'])
     LM.decode(['chao1','xi3','huan1','ni3','o4'])
     LM.decode(['xian4','dai4','han4','yu3','ci2','dian3','zhen1','de5','hen3','hao3','yong4'])
     LM.decode(['ai3','nai3','yi1','sheng1','shan1','shui3','lv4'])
+    LM.decode(['suo3','yi3','ping2','jun1','zhi2','gu1','liang5','qi3','lai2','ye3','shi4',
+               'bu4','zhun3','que4','de5'])
+    LM.decode(['kou1','kou1'])
