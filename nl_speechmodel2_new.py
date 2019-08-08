@@ -217,7 +217,7 @@ class SpeechModel():
         self.model_data.load_weights(self.save_path+filename+'_weights_data.h5')
 
     def PredModel(self,filename):
-        path='model_save\\'
+        path='model_save'+self.slash
         self.model_data.load_weights(path+filename+'_weights_data.h5')
         speech_datas=DataSpeech(self.relpath,'train')
         data_input,data_output=speech_datas.GetData(2)
@@ -246,6 +246,16 @@ class LossHistory(Callback):
         self.val_loss = {'batch':[], 'epoch':[]}
         self.val_acc = {'batch':[], 'epoch':[]}
 
+        system_type = plat.system()
+        self.slash = ''
+        if(system_type == 'Windows'):
+           self.slash = '\\' # 反斜杠
+        elif(system_type == 'Linux'):
+           self.slash = '/' # 正斜杠
+        else:
+           print('[Message] Unknown System\n')
+           self.slash = '/' # 正斜杠
+
     def on_batch_end(self, batch, logs={}):
         self.loss['batch'].append(float(logs.get('loss')))
         self.acc['batch'].append(float(logs.get('acc')))
@@ -261,7 +271,7 @@ class LossHistory(Callback):
     def save(self,filename):
         '''保存的文件名称'''
         #这个地方还是要换行保存才行！
-        path='loss_acc_save\\'
+        path='loss_acc_save'+self.slash
         with open(path+filename,mode='a') as file_object:
             #json.dump({'loss':self.loss,'acc':self.acc},file_object,indent=2)
             temp=json.dumps({'loss':self.loss,'acc':self.acc})

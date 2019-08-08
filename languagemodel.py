@@ -1,4 +1,5 @@
 import json
+import platform as plat
 
 '''
 魔鬼语言模型~
@@ -11,15 +12,24 @@ import json
 class Language_Model():
     def __init__(self,path):
         '''
-        文件路径+\\(windows下)，文件名写好了哦
+        文件路径名，不要（\\或/），文件名写好了哦
         '''
+        system_type = plat.system()
+        self.slash = ''
+        if(system_type == 'Windows'):
+           self.slash = '\\' # 反斜杠
+        elif(system_type == 'Linux'):
+           self.slash = '/' # 正斜杠
+        else:
+           print('[Message] Unknown System\n')
+           self.slash = '/' # 正斜杠
+
         self.beam=3#维特比解码每个词时保存路径数
         self.start='<s>'
         self.end='</s>'
-        self.path=path
+        self.path=path+self.slash
         self.load_languagemodel()#产生self——unig,big,trig,lexicon
-        pass
-
+        
     def load_languagemodel(self):
 
         with open(self.path+'unigram.txt','r',encoding='UTF-8') as file_object:
@@ -199,7 +209,7 @@ class Words_pro_path():
         self.path=path
 
 if __name__=='__main__':
-    LM=Language_Model('lan_model\\')
+    LM=Language_Model('lan_model')
 
     LM.decode(['lv4','shi4','yang2','chun1','yan1','jing3','da4','kuai4','wen2','zhang1','de5','di3',
                'se4','si4','yue4','de5','lin2','luan2','geng4','shi4','lv4','de5','xian1','huo2','xiu4','mei4','shi1',
