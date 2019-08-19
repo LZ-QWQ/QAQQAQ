@@ -3,7 +3,7 @@ from keras.layers import Lambda,Conv2D,Input,Dropout,MaxPooling2D,Reshape,Dense,
 from keras.models import Model,load_model
 from keras.optimizers import Adam,Adadelta,SGD
 from keras.callbacks import Callback
-from keras.utils import multi_gpu_model
+from keras.utils import multi_gpu_model,plot_model
 import tensorflow as tf
 
 import platform as plat
@@ -207,16 +207,25 @@ class SpeechModel():
                   %(epochs,epochs,data_nums//batch_size*batch_size))
 
     def SaveModel(self,filename):
+        '''
+        filename:保存的文件名，路径、后缀已准备好，如model_lz
+        '''
         self.model_ctc.save(self.save_path+filename+'_ctc.h5')
         self.model_data.save(self.save_path+filename+'_data.h5')
         self.model_ctc.save_weights(self.save_path+filename+'_weights_ctc.h5')
         self.model_data.save_weights(self.save_path+filename+'_weights_data.h5')
 
     def LoadModel(self,filename):
+        '''
+        filename:保存的文件名，路径、后缀已准备好，如model_lz
+        '''
         self.model_ctc.load_weights(self.save_path+filename+'_weights_ctc.h5')
         self.model_data.load_weights(self.save_path+filename+'_weights_data.h5')
 
     def PredModel(self,filename):
+        '''
+        filename:保存的文件名，路径、后缀已准备好，如model_lz
+        '''
         path='model_save'+self.slash
         self.model_data.load_weights(path+filename+'_weights_data.h5')
         speech_datas=DataSpeech(self.relpath,'train')
@@ -237,6 +246,14 @@ class SpeechModel():
         print(m)
         pinyin=speech_datas.num2symbol(n)
         print(pinyin)
+
+    def VisualModel(self,filename):
+        '''
+        filename:保存的文件名，路径、后缀已准备好，如model_lz
+        '''
+        path='model_image'+self.slash
+        plot_model(self.model_ctc,to_file=path+'model_ctc.png',show_shapes=True)
+        plot_model(self.model_data,to_file=path+'model_data.png',show_shapes=True)
 
 class LossHistory(Callback):
     def __init__(self):

@@ -16,6 +16,10 @@ S_M=SpeechModel('dataset')
 filename='lz_new'
 if os.path.exists('model_save'+slash+filename+'_weights_ctc.h5') and \
     os.path.exists('model_save'+slash+filename+'_weights_ctc.h5'):
-    S_M.LoadModel(filename)
-S_M.TrainModel(filename,epochs=200,save_epoch=1)
+    pass
+    #S_M.LoadModel(filename)
+if not (os.path.exists('model_image'+slash+filename+'_ctc.png') or \
+    os.path.exists('model_image'+slash+filename+'_data.png')):
+    S_M.VisualModel(filename)
+#S_M.TrainModel(filename,epochs=200,save_epoch=1)
 #S_M.PredModel('lz_new')
