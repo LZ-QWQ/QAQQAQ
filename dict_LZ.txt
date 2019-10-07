@@ -509,6 +509,7 @@ ke1
 ke2	
 ke3	
 ke4	
+ke5	
 kei1	
 ken3	
 ken4	

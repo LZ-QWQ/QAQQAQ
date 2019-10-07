@@ -19,10 +19,10 @@ dict_LZ 基本 忽略异体字、繁体字  来源 现代汉语词典 第六版
 子 zi5...在字典并没有单独列出，跟在子zi3的后面给出
 补：liang5 量 gu2 tou5 骨头 di5 弟 mo5 磨 fu5 服父腐妇 er5 儿 qie5 趄 rang5 嚷 ju5 矩 jia5 家 hu5 乎糊唬
 he5 喝 sheng5 声 huo5 伙和 tan5 弹 hou5 候 suo5 嗦 lao5 姥 QQ记作kou1 kou1 fang5 坊 chao5 吵 dao5 叨
-tun5 饨 du5 督 duo5 掇 mi5 迷 nai5 奶
+tun5 饨 du5 督 duo5 掇 mi5 迷 nai5 奶 屎壳郎 shǐkelàng xin1忄 ji5 （逻）辑（簸）箕
 
 
 
 因为变调问题 典型 3前3变2以及轻声 感觉有些东西不好处理
 
-这块就按pypinyin的开心来了
+变调按照 pypinyin转换结合“汉典”校准

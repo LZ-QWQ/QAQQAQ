@@ -3,12 +3,12 @@ import os
 import wav
 import numpy as np
 import random
+import time
+from LZ_Error import LZ_Error
 from tqdm import tqdm
 
 from Threadsafe_iter import threadsafe_generator
 
-#数据读取以后有机会改成列表管理，要不迟早玩死自己
-#另数据列表可以改下方式，没必要wav和symbol分开和分成列表+字典两种方式形式啊？！！！
 class DataSpeech():
     def __init__(self,relpath, type):
         system_type = plat.system()
@@ -27,21 +27,15 @@ class DataSpeech():
         #self.datapath = abspath_file + self.slash + relpath + self.slash
         self.datapath = relpath + self.slash#其实相对路径就行
 
-        self.dic_wavlist_thchs30 = {}
-        self.dic_symbollist_thchs30 = {}
-        self.dic_wavlist_stcmds = {}
-        self.dic_symbollist_stcmds = {}
-        self.dic_wavlist_aishell = {}
-        self.dic_symbollist_aishell = {}
+        #就全部算在一起吧先
+        self.dic_wavlist_all = {}
+        self.list_wavname_all = []
+        self.dic_symbollist_all = {}
         self.DataNum_Total = 0
-        self.DataNum_thchs30 = 0
-        self.DataNum_stcmds = 0
-        self.DataNum_aishell = 0
         self.LoadDataList()
         if (self.GetDataNum() != 1):
-            print("[message]音频数量不等于标签数量")
+            raise LZ_Error("音频数量不等于标签数量")
         self.list_symbol = self.GetSymbolList()
-        #print(self.Symbol2num('xue2'))
 
     def LoadDataList(self):
         '''
@@ -54,40 +48,20 @@ class DataSpeech():
         '''
         # 设定选取哪一项作为要使用的数据集
         if(self.type == 'train'):
-            filename_wavlist_thchs30 = 'thchs30' + self.slash + 'wav_train.txt'
-            filename_wavlist_stcmds = 'st-cmds' + self.slash + 'wav_all.txt'
-            filename_wavlist_aishell = 'aishell' + self.slash + 'wav_train.txt'
-            filename_symbollist_thchs30 = 'thchs30' + self.slash + 'symbol_train.txt'
-            filename_symbollist_stcmds = 'st-cmds' + self.slash + 'symbol_all.txt'           
-            filename_symbollist_aishell = 'aishell' + self.slash + 'symbol_train.txt'
+            datalist = ['thchs30','st-cmds','aishell','prime','aidata']
         elif(self.type == 'dev'):
-            filename_wavlist_thchs30 = 'thchs30' + self.slash + 'wav_dev.txt'
-            filename_wavlist_stcmds = ''
-            filename_wavlist_aishell = 'aishell' + self.slash + 'wav_dev.txt'
-            filename_symbollist_thchs30 = 'thchs30' + self.slash + 'symbol_dev.txt'
-            filename_symbollist_stcmds = ''
-            filename_symbollist_aishell = 'aishell' + self.slash + 'symbol_dev.txt'
+            datalist = ['thchs30','aishell','aidata']
         elif(self.type == 'test'):
-            filename_wavlist_thchs30 = 'thchs30' + self.slash + 'wav_test.txt'
-            filename_wavlist_stcmds = ''
-            filename_wavlist_aishell = 'aishell' + self.slash + 'wav_test.txt'
-            filename_symbollist_thchs30 = 'thchs30' + self.slash + 'symbol_test.txt'
-            filename_symbollist_stcmds = ''
-            filename_symbollist_aishell = 'aishell' + self.slash + 'symbol_test.txt'
+            datalist = ['thchs30','aishell','aidata']
         else:
-            raise ValueError('[QAQ]type有问题')
-        # 读取数据列表，wav文件列表和其对应的符号列表
-        self.dic_wavlist_thchs30,self.list_wavname_thchs30 = self.get_wav_list(self.datapath + filename_wavlist_thchs30)
-        self.dic_wavlist_aishell,self.list_wavname_aishell = self.get_wav_list(self.datapath + filename_wavlist_aishell)
-        
-        self.dic_symbollist_thchs30,self.list_symbolname_thchs30 = self.get_symbol_list(self.datapath + filename_symbollist_thchs30)
-        self.dic_symbollist_aishell,self.list_symbolname_stcmds = self.get_symbol_list(self.datapath + filename_symbollist_aishell)
-        
-        if filename_wavlist_stcmds != '' and filename_symbollist_stcmds != '':
-            self.dic_wavlist_stcmds,self.list_wavname_stcmds = self.get_wav_list(self.datapath + filename_wavlist_stcmds)
-            self.dic_symbollist_stcmds,self.list_symbolname_stcmds = self.get_symbol_list(self.datapath + filename_symbollist_stcmds)
+            raise LZ_Error('[QAQ]type有问题')
 
-        self.DataNum_Total = self.GetDataNum()
+        self.get_wav_list_dic(datalist)
+        self.get_symbol_dic(datalist)
+
+        self.GetDataNum()
+        print('总数据数：' + str(self.DataNum_Total))
+        time.sleep(3)
 
     def GetData(self,wav_num):
         '''
@@ -95,30 +69,23 @@ class DataSpeech():
         '''
         if wav_num > self.DataNum_Total:
             print('并没有那么多数据~')
-            raise ValueError('没这么多数据。。')
+            raise LZ_Error('没这么多数据。。')
 
-        if(wav_num < self.DataNum_thchs30):
-            wavname = self.list_wavname_thchs30[wav_num]
-            wav_filename = self.dic_wavlist_thchs30[wavname]
-            symbol = self.dic_symbollist_thchs30[wavname]
-
-        elif wav_num < self.DataNum_thchs30 + self.DataNum_stcmds:
-            wavname = self.list_wavname_stcmds[wav_num - self.DataNum_thchs30]
-            wav_filename = self.dic_wavlist_stcmds[wavname]
-            symbol = self.dic_symbollist_stcmds[wavname]
-
-        else:
-            wavname = self.list_wavname_aishell[wav_num - self.DataNum_thchs30 - self.DataNum_stcmds]
-            wav_filename = self.dic_wavlist_aishell[wavname]
-            symbol = self.dic_symbollist_aishell[wavname]
-
-        wav_filename = self.datapath + wav_filename
-        wave_data,framerate,wavetime = wav.read_wav_data(wav_filename)
+        wav_name = self.list_wavname_all[wav_num]
+        wav_filepath = self.dic_wavlist_all[wav_name]
+        symbol = self.dic_symbollist_all[wav_name]
+        wav_filepath = self.datapath + wav_filepath
+        wave_data,framerate,wavetime = wav.read_wav_data(wav_filepath)
 
         data_output = []
         for spell in symbol:
-            if(spell != '' and spell != ' '):#博士这里总有奇怪的东西
-                data_output.append(self.symbol2num(spell))
+            if(spell != '' and spell != ' '):#我也不记得这里为什么了,就是为了避免奇奇怪怪的事情吧
+                num=self.symbol2num(spell)#spell因为标签集的制作问题最后会有个空格，切割后会产生空字符，，空格就不记得了
+                if num!=-1:
+                    data_output.append(num)
+                else:
+                    raise LZ_Error(spell+' 不存在！！标签名为：' + wav_name + 
+                                   ';音频路径为：' + wav_filepath)
 
         #feat_input=wav.GetMFCC(wave_data[0],framerate)
         data_input = wav.Get_nlfeat(wave_data,framerate)
@@ -136,7 +103,7 @@ class DataSpeech():
         '''
 
         label = np.zeros((batch_size,1),dtype=np.int16)#这好像是为了CTC的
-        while True:
+        while True:#这个地方好像keras会自己处理生成器
             X = np.zeros((batch_size,audio_length,200,1),dtype=np.float64)#nl的特征，，
             y = np.zeros((batch_size,string_length),dtype=np.int16)
 
@@ -145,10 +112,16 @@ class DataSpeech():
             
 
             for i in range(batch_size):
-                ran_num = random.randint(0,self.DataNum_Total - 1)
+                ran_num = random.randint(232182,self.DataNum_Total - 1)
                 data_input,data_label = self.GetData(ran_num)#试一下什么情况
 
-                #print(data_input.shape)
+                if data_input.shape[0] > 1600:
+                    wav_name = self.list_wavname_all[ran_num]
+                    wav_filepath = self.dic_wavlist_all[wav_name]
+                    wav_filepath = self.datapath + wav_filepath
+                    raise LZ_Error('音频过长，删掉它！！音频名为：' + wav_name + 
+                                   ';路径为：' + wav_filepath)
+
                 #print(len(data_input))
                 #print(data_label.shape)
                 input_length[i] = (min(data_input.shape[0] // 8 + data_input.shape[0] % 8,200))#这里要控制长度，，再研究下,200是避免超出最大
@@ -162,53 +135,44 @@ class DataSpeech():
                    'input_length':input_length,
                    'label_length':label_length},{'ctc':label})
 
-    def get_wav_list(self,filename):
-        with open(filename,'r',encoding='UTF-8') as file_object:
-            file_text = file_object.read()
-            file_text = file_text.replace('\\',self.slash)#这两行改文件可能没办法在Linux的服务器上用
-            file_text = file_text.replace('/',self.slash)#所以在这里做替换
-            file_lines = file_text.split('\n')
-            dic_wavlist = {}
-            list_wavnum = []
-            print('load ' + filename + '的data list')
-            for line in tqdm(file_lines): 
-                if(line != ''):
-                    temp_line = line.split(' ')
-                    dic_wavlist[temp_line[0]] = temp_line[1]
-                    list_wavnum.append(temp_line[0])
-        return dic_wavlist,list_wavnum
+    def get_wav_list_dic(self,filename_list):
+        for filename in filename_list:
+            filepath = self.datapath + filename + self.slash + 'wav_' + self.type + '.txt'
+            with open(filepath,'r',encoding='UTF-8') as file_object:
+                file_text = file_object.read()
+                file_text = file_text.replace('\\',self.slash)#这两行改文件可能没办法在Linux的服务器上用
+                file_text = file_text.replace('/',self.slash)#所以在这里做替换
+                file_lines = file_text.split('\n')
+                print('load ' + filename + '的wav list')
+                for line in tqdm(file_lines): 
+                    if(line != ''):
+                        temp_line = line.split(' ')
+                        self.dic_wavlist_all[temp_line[0]] = temp_line[1]#个人觉得可能可以避免重名？其实根本不会发生
+                        self.list_wavname_all.append(temp_line[0])
+        return
 
-    def get_symbol_list(self,filename):
-        with open(filename,'r',encoding='UTF-8') as file_object:
-            file_text = file_object.read()
-            file_text.replace('\\',self.slash)#这两行改文件可能没办法在Linux的服务器上用
-            file_text.replace('/',self.slash)#所以在这里做替换
-            file_lines = file_text.split('\n')
-            dic_symbollist = {}
-            list_symbolnum = []
-            print('load ' + filename + '的data list')
-            for line in tqdm(file_lines): 
-                if(line != ''):
-                    temp_line = line.split(' ')
-                    dic_symbollist[temp_line[0]] = temp_line[1:]
-                    list_symbolnum.append(temp_line[0])
-        return dic_symbollist,list_symbolnum#感觉这里多余了 19.7.3
+    def get_symbol_dic(self,filename_list):
+        for filename in filename_list:
+            filepath = self.datapath + filename + self.slash + 'symbol_' + self.type + '.txt'
+            with open(filepath,'r',encoding='UTF-8') as file_object:
+                file_text = file_object.read()
+                file_text.replace('\\',self.slash)#这两行改文件可能没办法在Linux的服务器上用
+                file_text.replace('/',self.slash)#所以在这里做替换
+                file_lines = file_text.split('\n')
+                print('load ' + filename + '的symbol list')
+                for line in tqdm(file_lines): 
+                    if(line != ''):
+                        temp_line = line.split(' ')
+                        self.dic_symbollist_all[temp_line[0]] = temp_line[1:]
+        return
 
     def GetDataNum(self):
-        num_w_thchs30 = len(self.dic_wavlist_thchs30)
-        num_s_thchs30 = len(self.dic_symbollist_thchs30)
-        num_w_stcmds = len(self.dic_wavlist_stcmds)
-        num_s_stcmds = len(self.dic_symbollist_stcmds)
-        num_w_aishell = len(self.dic_wavlist_aishell)
-        num_s_aishell = len(self.dic_symbollist_aishell)
-
-        if(num_w_thchs30 == num_s_thchs30 and num_w_stcmds == num_s_stcmds and num_w_aishell == num_s_aishell):
-            self.DataNum_Total = num_w_thchs30 + num_w_stcmds + num_w_aishell
-            self.DataNum_stcmds = num_w_stcmds 
-            self.DataNum_thchs30 = num_w_thchs30
-            self.DataNum_aishell = num_w_aishell
+        wav_num = len(self.dic_wavlist_all)
+        symbol_num = len(self.dic_symbollist_all)
+        if wav_num == symbol_num:
+            self.DataNum_Total = wav_num
         else:
-            print(数据和标签数量有误)
+            print('[Error]数据和标签数量有误')
             return -1
 
         return 1
@@ -221,7 +185,6 @@ class DataSpeech():
         #symbollist_name = 'dict.txt'
         symbollist_name = 'dict_LZ.txt'
         list_symbol = []
-        #list_symbol.append(' ')#0把是
         with open(symbollist_name,'r',encoding='UTF-8') as file_object:
             file_text = file_object.read()
             file_lines = file_text.split('\n')
@@ -231,21 +194,21 @@ class DataSpeech():
                     symbol_ = line.split('\t')
                     list_symbol.append(symbol_[0])
             list_symbol.append(' ')#keras中 ctc默认最后一个作为分隔符（blank）
-            #symbolnum = len(list_symbol)
-                                               #print(symbolnum)
         return list_symbol
 
     def symbol2num(self,symbol):
         if(symbol != ''):
-            return self.list_symbol.index(symbol)
-        print('symbol有空白哦，就是没有的那种空白\'\'这样？')
-        return #不知道咋办，博士是放拼音总数，，，
+            try:
+                num=self.list_symbol.index(symbol)
+                return num
+            except ValueError:
+                print('该拼音不存在')
+                return -1
+        return 
 
     def num2symbol(self,vector):
         symbols = []
-        for i in vector[0]:
-            #print(type(i))
-            #print(i.shape)
+        for i in vector:
             symbols.append(self.list_symbol[int(i)])
         return symbols
 
@@ -254,4 +217,4 @@ if(__name__ == '__main__'):
     #print(data.symbol2num('xian1'))
     #print(data.list_symbol)
     #print(len(data.list_symbol))
-    print(data.DataNum_stcmds)
+    #data.GetData(1005215)

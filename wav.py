@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav #python_speech_feature doc上的
 
 from scipy.fftpack import fft 
-
 import python_speech_features as psf
 
+from LZ_Error import LZ_Error
 
 def read_wav_data(filename):
     '''
-    读取wav文件，返回声音信号数据？？这叫啥（声音信号的时域谱矩阵）博士的魔鬼说法
+    读取wav文件，返回声音信号数据？？这叫啥（声音信号的时域谱矩阵）
     '''
     with wave.open(filename,mode='rb') as wav_object:
         num_channels=wav_object.getnchannels()#声道数
@@ -44,9 +44,9 @@ def wave_show(wave_data,wavtime):
     plt.show()
 
 #博士的特征提取
-def Get_nlfeat(wavsignal, fs):#就是所谓的语谱图（语音频谱图）
+def Get_nlfeat(wavsignal, fs):#就是所谓的语谱图 log+spectrogram
     '''
-    主要是用来修正3版的bug
+    提取语谱图
     '''
     x=np.linspace(0, 400 - 1, 400, dtype = np.int64)
     w = 0.54 - 0.46 * np.cos(2 * np.pi * (x) / (400 - 1) ) # 汉明窗
@@ -62,7 +62,13 @@ def Get_nlfeat(wavsignal, fs):#就是所谓的语谱图（语音频谱图）
     #wav_length = len(wavsignal[0])
     wav_length = wav_arr.shape[1]
     
-    range0_end = int(len(wavsignal[0])/fs*1000 - time_window) // 10 + 1 # 计算循环终止的位置，也就是最终生成的窗数
+    time_length=len(wavsignal[0])/fs*1000
+    if time_length<500:#本来是为了避免短于25ms的，就直接这样吧
+        raise LZ_Error('音频时长过短，时长为：'+str(time_length)+'ms')
+    elif time_length>=16025:
+        raise LZ_Error('音频时长过长，时长为：'+str(time_length)+'ms')
+
+    range0_end = int(time_length - time_window) // 10 + 1 # 计算循环终止的位置，也就是最终生成的窗数
     data_input = np.zeros((range0_end, int(window_length // 2)),np.float64) # 用于存放最终的频率特征数据
     data_line = np.zeros((1, int(window_length)), dtype = np.float64)
     
@@ -99,10 +105,10 @@ def nl_feature_show(feat):
 
 if(__name__=='__main__'):
     #wave_data,framerate,wavtime=read_wav_data('天使.wav')    
-    wave_data,framerate,wavtime=read_wav_data('G:\\Code\\QAQQAQ\\dataset\\data_thchs30\\data\\A2_0.wav')
-    feat_nl=Get_nlfeat(wave_data,framerate)
+    wave_data,framerate,wavtime=read_wav_data('天使.wav')
+    feat_nl=Get_nlfeat(wave_data[0][0:160000],framerate)
     nl_feature_show(feat_nl)
-    #wave_show(wave_data,wavtime)
+    wave_show(wave_data[:160000],wavtime)
     #print(GetFrequencyFeature3(wave_data,framerate))
     #feat_mfcc=GetMFCC(wave_data[0],framerate)
     #print(feat_mfcc.shape)

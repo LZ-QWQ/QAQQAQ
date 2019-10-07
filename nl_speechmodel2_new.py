@@ -18,7 +18,7 @@ from readdata import DataSpeech
 
 class SpeechModel():
     def __init__(self, relpath):#relpath 数据集相对路径
-        self.OUTPUT_SIZE=1364;#很尴尬，，最后一个空白
+        self.OUTPUT_SIZE=1365;#很尴尬，，最后一个空白
         self.STRING_LENGTH=64;
         self.AUDIO_LENGTH=1600;
         self.AUDIO_FEATURE_LENGTH=200;#MFCC39 nl的是200
@@ -47,8 +47,9 @@ class SpeechModel():
     def CreateModel(self):
         
         input_data=Input(shape=(self.AUDIO_LENGTH,self.AUDIO_FEATURE_LENGTH,1),dtype='float32',name='input_data')
-        layer_1=Dropout(0.1)(input_data)
         #这个 1 是为了后面的conv2d
+        layer_1=Dropout(0.1)(input_data)
+        
         layer_1=Conv2D(32,(3,3),use_bias=True,activation='relu',padding='same',
                        kernel_initializer='he_normal')(layer_1)
         #layer_1=Dropout(0.05)(layer_1)
@@ -125,7 +126,7 @@ class SpeechModel():
         self.parallel_model_ctc=multi_gpu_model(self.model_ctc,gpus=2)
         
         #opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
-        opt=Adam(lr=0.00005,beta_1=0.9,beta_2=0.999,epsilon=None,decay=0.0,amsgrad=False)#Adam默认参数传说中的
+        opt=Adam(lr=0.00005)#Adam默认参数传说中的
         #opt=SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5) 
         
         #self.model_ctc.compile(loss={'ctc' : lambda y_true,y_pred:y_pred},
@@ -187,7 +188,7 @@ class SpeechModel():
                 hist=LossHistory()
                 self.parallel_model_ctc.fit_generator(generator=yield_datas,
                                               steps_per_epoch=500,
-                                              epochs=epoch_residu,
+                                              epochs=epoch_residue,
                                               verbose=1,
                                               #validation_data=yield_validation,
                                               #validation_steps=50,
@@ -200,11 +201,8 @@ class SpeechModel():
             except StopIteration:
                 print("[错误QAQ]貌似生成的数据格式有点问题？？")#天知道触发吗
                 
-
-
-        
-        print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（总数据量//batch_size*batch_size=%d）)"
-                  %(epochs,epochs,data_nums//batch_size*batch_size))
+        print("[提示QAQ]已经训练%d轮次，共%d轮(一轮数据量应为（500*batch_size=%d）)"
+                  %(epochs,epochs,500*batch_size))
 
     def SaveModel(self,filename):
         '''
@@ -229,7 +227,7 @@ class SpeechModel():
         path='model_save'+self.slash
         self.model_data.load_weights(path+filename+'_weights_data.h5')
         speech_datas=DataSpeech(self.relpath,'train')
-        data_input,data_output=speech_datas.GetData(2)
+        data_input,data_output=speech_datas.GetData(0)
         X=np.zeros((1,1600,200,1),dtype=np.float64)
         X[0,0:len(data_input)]=data_input;
         y_pre=self.model_data.predict(X)
@@ -244,8 +242,12 @@ class SpeechModel():
         #print(n.shape)
         #print(type(n))
         print(m)
-        pinyin=speech_datas.num2symbol(n)
+        pinyin_r=speech_datas.num2symbol(data_output)
+        total_pinyin=len(pinyin_r)
+        pinyin=speech_datas.num2symbol(n[0])
+        WER=GetEditDistance_pinyin(pinyin,pinyin_r)/total_pinyin
         print(pinyin)
+        print('WER:'+str(WER))
 
     def VisualModel(self,filename):
         '''
@@ -275,13 +277,16 @@ class LossHistory(Callback):
 
     def on_batch_end(self, batch, logs={}):
         self.loss['batch'].append(float(logs.get('loss')))
-        self.acc['batch'].append(float(logs.get('acc')))
+        self.acc['batch'].append(float(logs.get('accuracy')))
         #self.val_loss['batch'].append(logs.get('val_loss'))
         #self.val_acc['batch'].append(logs.get('val_acc'))
+        #好像这不对哦，fit_generator的参数介绍是下面这么写的，可测一下，，，
+        #on which to evaluate
+        #the loss and any model metrics at the end of each epoch.
 
     def on_epoch_end(self, batch, logs={}):
         self.loss['epoch'].append(float(logs.get('loss')))
-        self.acc['epoch'].append(float(logs.get('acc')))
+        self.acc['epoch'].append(float(logs.get('accuracy')))
         #self.val_loss['epoch'].append(logs.get('val_loss'))
         #self.val_acc['epoch'].append(logs.get('val_acc'))
 
@@ -291,7 +296,7 @@ class LossHistory(Callback):
         path='loss_acc_save'+self.slash
         with open(path+filename,mode='a') as file_object:
             #json.dump({'loss':self.loss,'acc':self.acc},file_object,indent=2)
-            temp=json.dumps({'loss':self.loss,'acc':self.acc})
+            temp=json.dumps({'loss':self.loss['epoch'],'acc':self.acc['epoch']})
             file_object.write(temp+'\n')
 
     def plot(self,loss_type='batch'):#现在epoch都是1以后改进
