@@ -1,0 +1,15 @@
+https://towardsdatascience.com/getting-to-know-the-mel-spectrogram-31bca3e2d9d0   说频谱的！或者说声谱图吧
+https://blog.ailemon.me/2019/07/18/sequence-modeling-with-ctc/  这个是讲CTC算法的原理的，博士写的hh
+https://blog.csdn.net/MSPinyin/article/details/6213447  N元语言模型解码或基本思想
+https://www.cnblogs.com/dahu-daqing/p/7449200.html  3元模型概率的计算，就是讲的如何用thchs30里开源的那个拼音到汉字的概率文件（ARPA格式）
+下面这两个讲平滑算法的实现、原理，看下思想写一写就行，研究深了就懵逼了。
+https://www.cnblogs.com/dahu-daqing/p/9759978.html
+http://www.speech.sri.com/projects/srilm/manpages/ngram-discount.7.html 这个是官方文档，上面链接里那个人提到的，你要是打不开再说，，
+
+https://github.com/nl8590687/ASRT_SpeechRecognition  博士的实现语音识别，也可以看看
+
+https://github.com/Rayhane-mamah/Tacotron-2 这里是语音合成的全部，最开始开源实现的人所做的，包括tacotron，griffin lim声码器，wavenet实现（这个他的不行后来我换了另一个人的库，但不用管）
+https://deepmind.com/blog/article/wavenet-generative-model-raw-audio  这个wavenet的官方网页？可以看一下，就很绕哦
+https://github.com/r9y9/wavenet_vocoder  这个是我用的wavenet的实现代码，若有空可看一眼
+
+griffin-lim算法的原理我没认真看过，没学过信号有些东西真不太懂，你自己搜一下一堆，
